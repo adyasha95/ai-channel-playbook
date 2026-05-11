@@ -1,0 +1,15 @@
+{
+  "name": "ai-channel-playbook",
+  "version": "1.0.0",
+  "description": "Automation pipeline to generate an AI explainer channel strategy — Word doc, slide deck, and action plan spreadsheet.",
+  "scripts": {
+    "generate:doc": "node generate_strategy_doc.js",
+    "generate:slides": "node generate_slides.js",
+    "generate:plan": "python3 generate_action_plan.py",
+    "generate:all": "node generate_strategy_doc.js && node generate_slides.js && python3 generate_action_plan.py"
+  },
+  "dependencies": {
+    "docx": "*",
+    "pptxgenjs": "*"
+  }
+}
