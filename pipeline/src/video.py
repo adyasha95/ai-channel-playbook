@@ -96,10 +96,15 @@ def _merge_audio_video(video_path: str, audio_path: str, duration: float, output
 
 def _create_placeholder_clip(duration: float, text: str, output_path: str):
     """Create a black clip with text (fallback when no Pexels footage found)."""
-    wrapped = _wrap_text(text, 40)
+    import tempfile
+    cleaned = _clean_caption_text(text, 40)
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".txt",
+                                     delete=False, encoding="utf-8") as tf:
+        tf.write(cleaned)
+        textfile_path = tf.name
     drawtext = (
         f"drawtext=fontfile='{FONT_PATH}'"
-        f":text='{wrapped}'"
+        f":textfile='{textfile_path}'"
         f":fontcolor=white:fontsize=48"
         f":x=(w-text_w)/2:y=(h-text_h)/2"
     )
@@ -147,7 +152,8 @@ def compose_video(sections_with_footage: list, output_dir: str, config: Config) 
     concat_list = str(work_dir / "concat.txt")
     with open(concat_list, "w") as f:
         for p in segment_paths:
-            f.write(f"file '{p}'\n")
+            # Use just the filename — FFmpeg resolves relative to concat.txt's dir
+            f.write(f"file '{os.path.basename(p)}'\n")
 
     final_path = str(Path(output_dir) / "final_video.mp4")
     _ffmpeg([
