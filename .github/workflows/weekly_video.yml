@@ -1,0 +1,56 @@
+name: Weekly AI Video Pipeline
+
+on:
+  schedule:
+    - cron: "0 8 * * 1"   # Every Monday at 8am UTC
+  workflow_dispatch:        # Also run manually from GitHub Actions tab
+
+jobs:
+  generate-and-upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install system dependencies (FFmpeg + fonts)
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y ffmpeg fonts-dejavu-core
+
+      - name: Install Python dependencies
+        working-directory: pipeline
+        run: pip install -r requirements.txt
+
+      - name: Write environment variables
+        working-directory: pipeline
+        run: |
+          cat > .env << 'EOF'
+          ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+          PEXELS_API_KEY=${{ secrets.PEXELS_API_KEY }}
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REFRESH_TOKEN=${{ secrets.GOOGLE_REFRESH_TOKEN }}
+          ELEVENLABS_API_KEY=${{ secrets.ELEVENLABS_API_KEY }}
+          APIFY_API_TOKEN=${{ secrets.APIFY_API_TOKEN }}
+          OUTPUT_DIR=./output
+          YOUTUBE_PRIVACY=public
+          EOF
+
+      - name: Run pipeline
+        working-directory: pipeline
+        run: python pipeline.py
+
+      - name: Upload run artifacts (video + script + thumbnail)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pipeline-output-${{ github.run_id }}
+          path: pipeline/output/
+          retention-days: 7
