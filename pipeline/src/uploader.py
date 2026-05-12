@@ -64,13 +64,16 @@ def upload_to_youtube(video_path: str, thumbnail_path: str,
 
     print(f"\n[upload] Video uploaded: https://youtu.be/{video_id}")
 
-    # Set thumbnail
+    # Set thumbnail (non-fatal — requires YouTube channel verification)
     if thumbnail_path and os.path.exists(thumbnail_path):
-        print("[upload] Setting thumbnail...")
-        youtube.thumbnails().set(
-            videoId=video_id,
-            media_body=MediaFileUpload(thumbnail_path, mimetype="image/jpeg")
-        ).execute()
-        print("[upload] Thumbnail set.")
+        try:
+            print("[upload] Setting thumbnail...")
+            youtube.thumbnails().set(
+                videoId=video_id,
+                media_body=MediaFileUpload(thumbnail_path, mimetype="image/jpeg")
+            ).execute()
+            print("[upload] Thumbnail set.")
+        except Exception as e:
+            print(f"[upload] Thumbnail skipped (verify channel at youtube.com/verify): {e}")
 
     return f"https://youtu.be/{video_id}"
