@@ -1,137 +1,75 @@
-# AI Channel Automation Pipeline
+# AI Explainer Channel — Strategy Automation Pipeline
 
-An end-to-end agentic pipeline that researches, writes, produces, and uploads AI explainer videos to YouTube — fully automatically, every week, with no manual steps.
+> Generate a full YouTube/Instagram channel strategy with one command: strategy doc, slide deck, and 90-day action plan — all automated.
 
-## How It Works
+## What This Generates
 
-```
-Claude (topic + script) → edge-tts (voiceover) → Pexels (stock footage)
-   → FFmpeg (video composition) → Pillow (thumbnail) → YouTube API (upload)
-```
+| File | Description |
+|------|-------------|
+| `outputs/AI_Channel_Playbook.docx` | Complete strategy guide — niche analysis, content framework, automation stack, monetization roadmap |
+| `outputs/AI_Channel_Blueprint.pptx` | 10-slide visual deck — opportunity, content pillars, income projections, 90-day roadmap |
+| `outputs/AI_Channel_Action_Plan.xlsx` | 4-sheet spreadsheet — task tracker, 20-video content calendar, monetization tracker, analytics dashboard |
 
-Each Monday, GitHub Actions runs the pipeline automatically. One command also runs it on demand locally.
+## Niche
 
-## Pipeline Steps
-
-| Step | Tool | What Happens |
-|------|------|--------------|
-| 1. Research | **Apify + Claude** | Scrapes Google News, YouTube gaps, Reddit questions, Google Trends → Claude picks the highest-opportunity topic from real data |
-| 2. Script | Claude API | Writes a structured 7-9 min explainer script |
-| 3. Voiceover | edge-tts / ElevenLabs | Converts each section to audio |
-| 4. Footage | Pexels API (free) | Downloads matching stock video clips |
-| 5. Video | FFmpeg | Composes final 1080p video with captions |
-| 6. Thumbnail | Pillow | Generates a branded YouTube thumbnail |
-| 7. Upload | YouTube Data API | Uploads video + thumbnail, sets title/tags/description |
-
-### Research Intelligence (Step 1 detail)
-
-When `APIFY_API_TOKEN` is set, the pipeline runs a 4-source intelligence sweep before Claude picks the topic:
-
-| Source | Apify Actor | What It Finds |
-|--------|-------------|---------------|
-| Google News | `data_xplorer/google-news-scraper-fast` | AI topics breaking right now |
-| YouTube | `scrapesmith/youtube-free-search-scraper` | Existing videos — reveals gaps with high demand but weak content |
-| Reddit | `betterdevsscrape/reddit-scraper` | Real questions from r/artificial, r/ChatGPT — validated audience demand |
-| Google Trends | `joyouscam35875/google-trends-scraper` | Rising vs. declining search interest |
-
-Claude then cross-references all four signals to find the sweet spot: **trending news + real Reddit demand + weak YouTube competition = maximum click potential**.
+**AI Explained Simply** — Cleo Abram-style explainer content for AI, ML, and emerging tech. High demand, low competition, premium CPM ($15–35). Full niche analysis and content strategy included in the generated doc.
 
 ## Quick Start
 
-### 1. Clone and install
+### 1. Install dependencies
 
 ```bash
-git clone https://github.com/adyasha95/ai-channel-playbook.git
-cd ai-channel-playbook/pipeline
-pip install -r requirements.txt
-sudo apt install ffmpeg   # Ubuntu/macOS: brew install ffmpeg
+npm install        # installs docx + pptxgenjs
+pip install -r requirements.txt   # installs openpyxl
 ```
 
-### 2. Set up API keys
+### 2. Generate everything
 
 ```bash
-cp .env.example .env
-# Fill in your keys (see API Setup below)
+npm run generate:all
 ```
 
-### 3. Authenticate YouTube (one time only)
+Or generate files individually:
 
 ```bash
-# Download client_secret.json from Google Cloud Console first
-python setup_youtube_auth.py
-# Opens browser → log in → copies refresh token to terminal
-# Paste the three values into your .env file
+npm run generate:doc      # Word strategy doc
+npm run generate:slides   # PowerPoint deck
+npm run generate:plan     # Excel action plan
 ```
 
-### 4. Run the pipeline
+All outputs land in the `outputs/` folder.
 
-```bash
-python pipeline.py
-```
+## Requirements
 
-### 5. Set up GitHub Actions (for fully automatic weekly uploads)
+- Node.js 16+
+- Python 3.8+
+- npm
 
-Add these as repository secrets at `Settings → Secrets and variables → Actions`:
-
-```
-ANTHROPIC_API_KEY
-PEXELS_API_KEY
-GOOGLE_CLIENT_ID
-GOOGLE_CLIENT_SECRET
-GOOGLE_REFRESH_TOKEN
-ELEVENLABS_API_KEY     (optional)
-```
-
-The workflow in `.github/workflows/weekly_video.yml` runs every Monday at 8am UTC automatically.
-
-## API Setup
-
-| API | Cost | Where to Get |
-|-----|------|--------------|
-| Anthropic (Claude) | ~$0.20/video | console.anthropic.com |
-| Pexels | Free | pexels.com/api |
-| YouTube Data API | Free | console.cloud.google.com → Enable YouTube Data API v3 |
-| **Apify** | **~$0.05–0.10/video** | **apify.com → Settings → Integrations (free tier available)** |
-| ElevenLabs | Optional, ~$0.30/video | elevenlabs.io (upgrade for more natural voice) |
-
-## Project Structure
+## Files
 
 ```
-pipeline/
-├── pipeline.py                   # Main orchestrator — run this
-├── config.py                     # All settings and env vars
-├── setup_youtube_auth.py         # One-time YouTube OAuth setup
+ai-channel-playbook/
+├── generate_strategy_doc.js   # Generates the Word strategy doc
+├── generate_slides.js         # Generates the PowerPoint deck
+├── generate_action_plan.py    # Generates the Excel action plan
+├── outputs/                   # Pre-generated files (ready to use)
+│   ├── AI_Channel_Playbook.docx
+│   ├── AI_Channel_Blueprint.pptx
+│   └── AI_Channel_Action_Plan.xlsx
+├── package.json
 ├── requirements.txt
-├── .env.example
-├── src/
-│   ├── research.py               # Claude: topic selection
-│   ├── script.py                 # Claude: script writing
-│   ├── voiceover.py              # edge-tts / ElevenLabs: audio generation
-│   ├── footage.py                # Pexels API: stock footage download
-│   ├── video.py                  # FFmpeg: video composition
-│   ├── thumbnail.py              # Pillow: thumbnail generation
-│   └── uploader.py               # YouTube API: upload
-└── .github/
-    └── workflows/
-        └── weekly_video.yml      # GitHub Actions: runs every Monday
+└── README.md
 ```
 
-## Customisation
+## Monetization Roadmap (Summary)
 
-- **Voice**: Change `VOICE` in `config.py` — any [edge-tts voice](https://github.com/rany2/edge-tts#voices) works
-- **Upload schedule**: Edit the cron in `weekly_video.yml` (`0 8 * * 1` = Monday 8am UTC)
-- **Privacy**: Set `YOUTUBE_PRIVACY=unlisted` to review before publishing
-- **Channel style**: Edit `CHANNEL_STYLE` and `NICHE` in `config.py` to change the AI's persona
+| Timeline | Stream | Expected Income |
+|----------|--------|----------------|
+| Month 1+ | Affiliate marketing (Jasper, Copy.ai, Notion) | $20–80/mo |
+| Month 2+ | Digital products (prompt packs, templates) | $50–200/mo |
+| Month 3+ | Micro-sponsorships from AI companies | $100–500/video |
+| Month 6+ | YouTube Partner Program (ads) | $150–500/mo |
 
-## Cost Per Video
+---
 
-| Item | Cost |
-|------|------|
-| Claude API (topic + script) | ~$0.15–0.25 |
-| Pexels footage | Free |
-| edge-tts voiceover | Free |
-| YouTube upload | Free |
-| GitHub Actions | Free (2,000 min/mo) |
-| **Total** | **~$0.20/video** |
-
-Upgrading to ElevenLabs adds ~$0.30/video for significantly better voice quality.
+Built with [docx](https://github.com/dolanmiu/docx), [pptxgenjs](https://github.com/gitbrent/PptxGenJS), and [openpyxl](https://openpyxl.readthedocs.io/).
