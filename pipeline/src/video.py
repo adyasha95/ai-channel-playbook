@@ -25,14 +25,18 @@ def _ffmpeg(cmd: list, label: str = ""):
         raise RuntimeError(f"FFmpeg failed [{label}]:\n{result.stderr}")
 
 
-def _wrap_text(text: str, max_chars: int = 55) -> str:
-    """Wrap long text for subtitle display."""
-    return r"\n".join(textwrap.wrap(text[:220], max_chars))
+def _clean_caption_text(text: str, max_chars: int = 55) -> str:
+    """Clean and wrap text for FFmpeg drawtext textfile."""
+    # Strip problematic characters
+    text = text.replace("\r", " ").replace("\n", " ")
+    text = text[:200]
+    # Wrap into lines (textfile uses real newlines)
+    lines = textwrap.wrap(text, max_chars)
+    return "\n".join(lines[:3])
 
 
 def _loop_clip_to_duration(clip_path: str, duration: float, output_path: str):
     """Loop a video clip (no audio) to exactly fill the required duration."""
-    # Calculate how many loops needed, add 1 for safety
     loops = max(1, int(duration / 5) + 2)
     _ffmpeg([
         "-stream_loop", str(loops),
@@ -46,24 +50,35 @@ def _loop_clip_to_duration(clip_path: str, duration: float, output_path: str):
 
 
 def _add_caption(video_path: str, caption: str, duration: float, output_path: str):
-    """Burn a caption bar onto the video."""
-    wrapped = _wrap_text(caption)
+    """Burn a caption bar onto the video using a textfile to avoid escaping issues."""
+    import tempfile
+    cleaned = _clean_caption_text(caption)
+
+    # Write caption to a temp file — avoids ALL special-char escaping in drawtext
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".txt",
+                                     delete=False, encoding="utf-8") as tf:
+        tf.write(cleaned)
+        textfile_path = tf.name
+
     drawtext = (
         f"drawtext=fontfile='{FONT_PATH}'"
-        f":text='{wrapped}'"
+        f":textfile='{textfile_path}'"
         f":fontcolor={CAPTION_COLOR}"
         f":fontsize={CAPTION_FONT_SIZE}"
         f":box=1:boxcolor={CAPTION_BOX_COLOR}:boxborderw=20"
         f":x=(w-text_w)/2:y=h-text_h-60"
         f":line_spacing=8"
     )
-    _ffmpeg([
-        "-i", video_path,
-        "-vf", drawtext,
-        "-c:v", "libx264", "-preset", "fast", "-crf", "23",
-        "-c:a", "copy",
-        output_path
-    ], "add_caption")
+    try:
+        _ffmpeg([
+            "-i", video_path,
+            "-vf", drawtext,
+            "-c:v", "libx264", "-preset", "fast", "-crf", "23",
+            "-c:a", "copy",
+            output_path
+        ], "add_caption")
+    finally:
+        os.unlink(textfile_path)  # clean up temp file
 
 
 def _merge_audio_video(video_path: str, audio_path: str, duration: float, output_path: str):
