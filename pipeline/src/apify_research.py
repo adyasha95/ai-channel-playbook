@@ -40,7 +40,7 @@ class ApifyClient:
 def get_ai_news(client: ApifyClient, max_articles: int = 8) -> list:
     """Get the latest AI/ML news headlines from Google News."""
     print("[apify] Fetching AI news from Google News...")
-    results = client.run_actor("data_xplorer/google-news-scraper-fast", {
+    results = client.run_actor("data_xplorer~google-news-scraper-fast", {
         "keywords": [
             "artificial intelligence breakthrough",
             "AI agent autonomous",
@@ -75,7 +75,7 @@ def get_youtube_competition(client: ApifyClient, topics: list) -> list:
     """
     print("[apify] Analyzing YouTube competition...")
     search_terms = [t for t in topics[:5]]   # up to 5 search queries
-    results = client.run_actor("scrapesmith/youtube-free-search-scraper", {
+    results = client.run_actor("scrapesmith~youtube-free-search-scraper", {
         "searchTerms": search_terms,
         "maxResultsPerQuery": 8,
     })
@@ -104,7 +104,7 @@ def get_reddit_questions(client: ApifyClient, max_posts: int = 15) -> list:
     all_posts = []
 
     for sub in subreddits[:2]:  # keep costs low
-        results = client.run_actor("betterdevsscrape/reddit-scraper", {
+        results = client.run_actor("betterdevsscrape~reddit-scraper", {
             "startUrls": [{"url": f"https://www.reddit.com/r/{sub}/hot/"}],
             "maxItems": 8,
             "includeComments": False,
@@ -132,7 +132,7 @@ def get_reddit_questions(client: ApifyClient, max_posts: int = 15) -> list:
 def get_trending_keywords(client: ApifyClient, keywords: list) -> list:
     """Validate search interest for candidate topics using Google Trends."""
     print("[apify] Checking Google Trends for search volume...")
-    results = client.run_actor("joyouscam35875/google-trends-scraper", {
+    results = client.run_actor("joyouscam35875~google-trends-scraper", {
         "keywords": keywords[:5],
         "geo": "",
         "timeRange": "now 7-d",
