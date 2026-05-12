@@ -24,13 +24,17 @@ class ApifyClient:
         self.headers = {"Authorization": f"Bearer {token}"}
 
     def run_actor(self, actor_id: str, input_data: dict,
-                  timeout_secs: int = 120) -> list:
-        """Run an Apify actor synchronously and return output items."""
+                  timeout_secs: int = 300) -> list:
+        """Run an Apify actor synchronously and return output items.
+        201 = run started but timed out (increase timeout or poll).
+        200 = success with data.
+        """
         url = f"{APIFY_BASE}/acts/{actor_id}/run-sync-get-dataset-items"
-        params = {"token": self.token, "timeout": timeout_secs}
-        r = requests.post(url, json=input_data, params=params, timeout=timeout_secs + 30)
+        params = {"token": self.token, "timeout": timeout_secs, "memory": 256}
+        r = requests.post(url, json=input_data, params=params, timeout=timeout_secs + 60)
         if r.status_code == 200:
-            return r.json().get("items", r.json() if isinstance(r.json(), list) else [])
+            data = r.json()
+            return data if isinstance(data, list) else data.get("items", [])
         print(f"  [apify] Warning: {actor_id} returned {r.status_code} — skipping")
         return []
 
